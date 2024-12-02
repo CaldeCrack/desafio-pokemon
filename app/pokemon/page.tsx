@@ -1,11 +1,11 @@
 'use client';
 import { useSearchParams } from "next/navigation";
 import useSWR from 'swr';
-import PokemonInfo from "../components/Pokemon";
+import PokemonInfo from "../components/PokemonInfo";
 
 const fetchPokemon = async (url: string) => {
 	const response = await fetch(url);
-	
+
 	if(!response.ok)
 		throw new Error('Fallo al buscar pokémon');
 

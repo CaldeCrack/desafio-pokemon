@@ -6,7 +6,7 @@ const SearchInput = () => {
 	const search = useSearchParams();
 	const [pokemon, setPokemon] = useState(search ? search.get('name') : null);
 	const router = useRouter();
-	
+
 	const onSearch = (event: React.FormEvent) => {
 		event.preventDefault();
 
