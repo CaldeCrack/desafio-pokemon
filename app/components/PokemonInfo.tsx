@@ -5,8 +5,11 @@ import { BarChart } from '@mui/x-charts';
 import useSWR from 'swr';
 
 const capitalizePhrase = (str: string) => {
+	if (str === 'ho-oh') return 'Ho-oh';
+	const exceptions: Array<string> = ['porygon-z', 'wo-chien', 'chi-yu', 'chien-pao', 'ting-lu'];
+	const splitter = str in exceptions ? ' ' : '-';
 	const capitalize = (word: string) => {return word.charAt(0).toUpperCase() + word.substring(1);}
-	return str.split('-').map((word: string) => capitalize(word)).join(' ');
+	return str.split('-').map((word: string) => capitalize(word)).join(splitter);
 }
 
 const fetchData = async (url: string) => {
@@ -31,24 +34,25 @@ const formatTypes = (types: Array<any>) => {
 	));
 }
 
-const formatAbilities = (ability: any) => {
+const formatAbilities = (ability: any, is_hidden: boolean = false) => {
 	let name;
-	for (const elem of ability.names)
-		if (elem.language.name === 'es')
+	for (const elem of ability.names) {
+		if (elem.language.name === 'es') {
 			name = elem.name;
-	if (!name)
-		for (const elem of ability.names)
-			if (elem.language.name === 'en')
-				name = elem.name;
+			break;
+		} else if (elem.language.name === 'en')
+			name = elem.name;
+	}
+	if (is_hidden) name = name.concat(' (Habilidad oculta)');
 
 	let description;
-	for (const elem of ability.flavor_text_entries)
-		if (elem.language.name === 'es')
+	for (const elem of ability.flavor_text_entries) {
+		if (elem.language.name === 'es') {
 			description = elem.flavor_text;
-	if (!description)
-		for (const elem of ability.flavor_text_entries)
-			if (elem.language.name === 'en')
-				description = elem.flavor_text;
+			break;
+		} else if (elem.language.name === 'en')
+			description = elem.flavor_text;
+	}
 
 	return (
 		<div key={name}>
@@ -60,42 +64,32 @@ const formatAbilities = (ability: any) => {
 
 const formatGenera = (genera: Array<any>) => {
 	let genus;
-	for (const elem of genera)
+	for (const elem of genera) {
 		if (elem.language.name === 'es')
+			return elem.genus;
+		else if (elem.language.name === 'en')
 			genus = elem.genus;
-	if (!genus)
-		for (const elem of genera)
-			if (elem.language.name === 'en')
-				genus = elem.genus;
+	}
 	return genus;
 }
 
 const formatStats = (stats: Array<any>) => {
-	const statDict: any = {
-		'hp': 'HP',
-		'attack': 'Atk',
-		'defense': 'Def',
-		'special-attack': 'SpA',
-		'special-defense': 'SpD',
-		'speed': 'Spe',
-	}
-
-	let xData: Array<string> = [];
+	let xData: Array<string> = ['HP', 'Atk', 'Def', 'SpA', 'Spd', 'Spe'];
 	let yData: Array<number> = [];
-	stats.forEach((elem: any) => {
-		xData.push(statDict[elem.stat.name]);
-		yData.push(elem.base_stat);
-	});
+	stats.forEach((elem: any) => {yData.push(elem.base_stat);});
+	const data = xData.map(function(e, i) {return [e, yData[i]]});
 
 	return (
 		<BarChart
-		xAxis={[{
-			id: 'stat',
-			data: xData,
-			scaleType: 'band',
-		}]}
-		series={[{data: yData,}]}
-
+			xAxis={[{
+				id: 'stats',
+				data: xData,
+				scaleType: 'band',
+			}]}
+			series={[{
+				data: yData,
+				type: 'bar'
+			}]}
 		/>
 	)
 }
@@ -122,7 +116,7 @@ const PokemonInfo = (pokemon: any) => {
 		const { data, isLoading } = useSWR(`/api/ability?name=${ability.ability.name}`, fetchData);
 		if (isLoading) return <div>Cargando...</div>;
 		if (!data) return;
-		abilitiesInfo.push(formatAbilities(data));
+		abilitiesInfo.push(formatAbilities(data, ability.is_hidden));
 	});
 	let abilityHeader;
 	if (abilitiesInfo.length > 1)
