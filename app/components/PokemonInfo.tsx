@@ -1,6 +1,6 @@
 'use client';
 import styles from './Types.module.css';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useSWR from 'swr';
 
 const capitalizePhrase = (str: string) => {
@@ -8,20 +8,21 @@ const capitalizePhrase = (str: string) => {
 	return str.split('-').map((word: string) => capitalize(word)).join(' ');
 }
 
-const fetchPokemonSpecies = async (url: string) => {
+const fetchData = async (url: string) => {
 	const response = await fetch(url);
 
 	if(!response.ok)
-		throw new Error('Fallo al buscar pokémon');
+		throw new Error('Fallo al buscar información');
 
 	return response.json();
 }
 
-const formatName = (name: string) => {
-	return capitalizePhrase(name);
-}
-
 const formatId = (id: number) => {return String(id).padStart(4, '0');}
+
+const formatName = (name: string) => {return capitalizePhrase(name);}
+
+const formatHeight = (height: number) => {return `${height/10} m`;}
+const formatWeight = (weight: number) => {return `${weight/10} kg`;}
 
 const formatTypes = (types: Array<any>) => {
 	return types.map((typeObject: any) => (
@@ -29,52 +30,78 @@ const formatTypes = (types: Array<any>) => {
 	));
 }
 
-const formatHeight = (height: number) => {return `${height/10} m`;}
-const formatWeight = (weight: number) => {return `${weight/10} kg`;}
+const formatAbilities = (ability: any) => {
+	let name;
+	for (const elem of ability.names)
+		if (elem.language.name === 'es')
+			name = elem.name;
+	if (!name)
+		for (const elem of ability.names)
+			if (elem.language.name === 'en')
+				name = elem.name;
 
-const formatAbilities = (abilitiesArray: Array<any>) => {
-	let header;
-	if (abilitiesArray.length > 1)
-		header = <h2 className='text-xl'><strong>Habilidades</strong></h2>
-	else
-		header = <h2 className='text-xl'><strong>Habilidad</strong></h2>
+	let description;
+	for (const elem of ability.flavor_text_entries)
+		if (elem.language.name === 'es')
+			description = elem.flavor_text;
+	if (!description)
+		for (const elem of ability.flavor_text_entries)
+			if (elem.language.name === 'en')
+				description = elem.flavor_text;
 
 	return (
-		<>
-			{header}
-			<div>
-				{abilitiesArray.map((ability: any) => (
-					<p key={ability.ability.name}>{capitalizePhrase(ability.ability.name)}</p>
-				))}
-			</div>
-		</>
-	);
+		<div key={name}>
+			<p><u>{name}:</u></p>
+			<p>{description}</p>
+		</div>
+	)
 }
 
 const formatGenera = (genera: Array<any>) => {
+	let genus;
 	for (const elem of genera)
-		if (elem.language.name === 'es' || elem.language.name === 'en')
-			return elem.genus;
+		if (elem.language.name === 'es')
+			genus = elem.genus;
+	if (!genus)
+		for (const elem of genera)
+			if (elem.language.name === 'en')
+				genus = elem.genus;
+	return genus;
 }
 
 const PokemonInfo = (pokemon: any) => {
 	const info = pokemon.children;
 	const id = formatId(info.id);
 	const name = formatName(info.name);
-	const types = formatTypes(info.types);
-	const imageURL = info.sprites.front_default;
 	const height = formatHeight(info.height);
 	const weight = formatWeight(info.weight);
-	const abilities = formatAbilities(info.abilities);
+	const types = formatTypes(info.types);
+	const imageURL = info.sprites.front_default;
+	const shinyImageURL = info.sprites.front_shiny;
 	const cry = info.cries.latest;
 
-	const { data, isLoading } = useSWR(`/api/pokemon-species?id=${info.id}`, fetchPokemonSpecies);
+	const [isShiny, setIsShiny] = useState(false);
+	const currentImageURL = isShiny ? shinyImageURL : imageURL;
 
+	// Handle abilities info
+	const { data, isLoading } = useSWR(`/api/pokemon-species?id=${info.species.name}`, fetchData);
+	let abilitiesInfo: Array<any> = [];
+	info.abilities.forEach((ability: any) => {
+		const { data, isLoading } = useSWR(`/api/ability?name=${ability.ability.name}`, fetchData);
+		if (isLoading) return <div>Cargando...</div>;
+		if (!data) return;
+		abilitiesInfo.push(formatAbilities(data));
+	});
+	let abilityHeader;
+	if (abilitiesInfo.length > 1)
+		abilityHeader = <h2 className='text-xl'><strong>Habilidades</strong></h2>
+	else
+		abilityHeader = <h2 className='text-xl'><strong>Habilidad</strong></h2>
+
+	// Canvas behavior
+	const handleCanvasClick = () => {setIsShiny((prev) => !prev);};
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	useEffect(() => {
-		console.log("canvasRef.current:", canvasRef.current);
-		console.log("imageURL:", imageURL);
-
 		const canvas = canvasRef.current;
 		if (!canvas || !imageURL) return;
 
@@ -83,12 +110,12 @@ const PokemonInfo = (pokemon: any) => {
 
 		context.imageSmoothingEnabled = false;
 		const image = new window.Image();
-		image.src = `${imageURL}?timestamp=${new Date().getTime()}`;
+		image.src = currentImageURL;
 		image.onload = () => {
 			context.clearRect(0, 0, canvas.width, canvas.height);
 			context.drawImage(image, 0, 0, canvas.width, canvas.height);
 		};
-	}, [data, isLoading, imageURL]);
+	}, [data, isLoading, currentImageURL, abilitiesInfo]);
 
 	if (isLoading) return <div>Cargando...</div>;
 	if (!data) return;
@@ -103,7 +130,7 @@ const PokemonInfo = (pokemon: any) => {
 					<p className="text-sm">{genus}</p>
 				</div>
 				<div className="flex flex-row gap-2">{types}</div>
-				<canvas ref={canvasRef} className={`${styles.render}`}></canvas>
+				<canvas onClick={handleCanvasClick} ref={canvasRef} className={`${styles.render}`}></canvas>
 				<div>
 					<p><strong>Altura:</strong> {height}</p>
 					<p><strong>Peso:</strong> {weight}</p>
@@ -111,7 +138,8 @@ const PokemonInfo = (pokemon: any) => {
 			</div>
 			<div className="flex flex-col w-1/3 p-4 bg-zinc-800 rounded-3xl ring-[1px] ring-green-700 gap-3" style={{ justifyContent:'space-between' }}>
 				<div className='flex flex-col gap-3'>
-					{abilities}
+					{abilityHeader}
+					{abilitiesInfo}
 				</div>
 				<div className='flex flex-col gap-3'>
 					<h2 className='text-xl'><strong>Grito</strong></h2>
@@ -125,6 +153,7 @@ const PokemonInfo = (pokemon: any) => {
 				</div>
 			</div>
 			<div className="flex flex-col w-1/3 p-4 bg-zinc-800 rounded-3xl ring-[1px] ring-green-700 gap-3">
+				<h2 className='text-xl'><strong>Estadísticas</strong></h2>
 
 			</div>
 		</div>
