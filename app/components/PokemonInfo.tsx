@@ -1,5 +1,4 @@
 'use client';
-import Image from "next/image";
 import styles from './Types.module.css';
 import { useEffect, useRef } from 'react';
 import useSWR from 'swr';
@@ -44,30 +43,30 @@ const PokemonInfo = (pokemon: any) => {
 	const height = formatHeight(info.height);
 	const weight = formatWeight(info.weight);
 
-	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const imgRef = useRef<HTMLImageElement>(null);
-	useEffect(() => {
-		const canvas = canvasRef.current;
-		const image = imgRef.current;
-		if (canvas && image) {
-			const context = canvas.getContext('2d');
-			if (context === null)
-				return;
-
-			image.onload = () => {
-				context.clearRect(0, 0, canvas.width, canvas.height);
-				context.drawImage(image, 0, 0, canvas.width, canvas.height);
-			};
-			if (image.complete) {
-				context.clearRect(0, 0, canvas.width, canvas.height);
-				context.drawImage(image, 0, 0, canvas.width, canvas.height);
-			}
-		}
-	}, []);
-
 	const { data, isLoading } = useSWR(`/api/pokemon-species?id=${info.id}`, fetchPokemonSpecies);
-	if (!data)
-		return;
+
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+	useEffect(() => {
+		console.log("canvasRef.current:", canvasRef.current);
+		console.log("imageURL:", imageURL);
+
+		const canvas = canvasRef.current;
+		if (!canvas || !imageURL) return;
+
+		const context = canvas.getContext('2d');
+		if (!context) return;
+
+		context.imageSmoothingEnabled = false;
+		const image = new window.Image();
+		image.src = `${imageURL}?timestamp=${new Date().getTime()}`;
+		image.onload = () => {
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			context.drawImage(image, 0, 0, canvas.width, canvas.height);
+		};
+	}, [data, isLoading, imageURL]);
+
+	if (isLoading) return <div>Loading...</div>;
+	if (!data) return;
 
 	const genus = formatGenera(data.genera);
 
@@ -79,12 +78,11 @@ const PokemonInfo = (pokemon: any) => {
 					<p className="text-sm">{genus}</p>
 				</div>
 				<div className="flex flex-row gap-2">{types}</div>
-				<canvas className={`${styles.render}`} ref={canvasRef}></canvas>
-				<img ref={imgRef} src={imageURL} alt={name} style={{display: 'none'}}/>
+				<canvas ref={canvasRef} className={`${styles.render}`}></canvas>
 				<p><strong>Altura:</strong> {height}</p><p><strong>Peso:</strong> {weight}</p>
 			</div>
 			<div className="flex flex-col p-4 bg-zinc-800 rounded-3xl ring-[1px] ring-green-700 gap-3">
-
+				
 			</div>
 		</div>
 	)
