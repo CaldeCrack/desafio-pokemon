@@ -1,6 +1,7 @@
 'use client';
 import styles from './Types.module.css';
 import { useEffect, useRef, useState } from 'react';
+import { BarChart } from '@mui/x-charts';
 import useSWR from 'swr';
 
 const capitalizePhrase = (str: string) => {
@@ -69,6 +70,36 @@ const formatGenera = (genera: Array<any>) => {
 	return genus;
 }
 
+const formatStats = (stats: Array<any>) => {
+	const statDict: any = {
+		'hp': 'HP',
+		'attack': 'Atk',
+		'defense': 'Def',
+		'special-attack': 'SpA',
+		'special-defense': 'SpD',
+		'speed': 'Spe',
+	}
+
+	let xData: Array<string> = [];
+	let yData: Array<number> = [];
+	stats.forEach((elem: any) => {
+		xData.push(statDict[elem.stat.name]);
+		yData.push(elem.base_stat);
+	});
+
+	return (
+		<BarChart
+		xAxis={[{
+			id: 'stat',
+			data: xData,
+			scaleType: 'band',
+		}]}
+		series={[{data: yData,}]}
+
+		/>
+	)
+}
+
 const PokemonInfo = (pokemon: any) => {
 	const info = pokemon.children;
 	const id = formatId(info.id);
@@ -76,6 +107,7 @@ const PokemonInfo = (pokemon: any) => {
 	const height = formatHeight(info.height);
 	const weight = formatWeight(info.weight);
 	const types = formatTypes(info.types);
+	const stats = formatStats(info.stats);
 	const imageURL = info.sprites.front_default;
 	const shinyImageURL = info.sprites.front_shiny;
 	const cry = info.cries.latest;
@@ -154,7 +186,7 @@ const PokemonInfo = (pokemon: any) => {
 			</div>
 			<div className="flex flex-col w-1/3 p-4 bg-zinc-800 rounded-3xl ring-[1px] ring-green-700 gap-3">
 				<h2 className='text-xl'><strong>Estadísticas</strong></h2>
-
+				{stats}
 			</div>
 		</div>
 	)
