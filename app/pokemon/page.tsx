@@ -12,21 +12,15 @@ const fetchPokemon = async (url: string) => {
 	return response.json();
 }
 
-const PokemonPage = () => {
+export default function PokemonPage() {
 	const pokemon = useSearchParams();
 	const pokemonName = pokemon ? pokemon.get('name') : null;
 	const encodedPokemonName = encodeURI(pokemonName || '');
 
 	const { data, isLoading } = useSWR(`/api/pokemon?name=${encodedPokemonName}`, fetchPokemon);
 
-	if (!data)
-		return null;
+	if (isLoading) return <div>Cargando...</div>;
+	if (!data) return null;
 
-	return (
-		<PokemonInfo>
-			{data}
-		</PokemonInfo>
-	)
+	return (<PokemonInfo>{data}</PokemonInfo>)
 }
-
-export default PokemonPage;

@@ -2,7 +2,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 
-const SearchInput = () => {
+export default function SearchInput() {
 	const search = useSearchParams();
 	const [pokemon, setPokemon] = useState(search ? search.get('name') : null);
 	const router = useRouter();
@@ -25,5 +25,3 @@ const SearchInput = () => {
 		</form>
 	)
 };
-
-export default SearchInput;

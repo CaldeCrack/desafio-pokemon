@@ -2,6 +2,7 @@
 import styles from './Types.module.css';
 import { useEffect, useRef, useState } from 'react';
 import { BarChart } from '@mui/x-charts';
+import { Tooltip } from '@mui/material';
 import useSWR from 'swr';
 
 const capitalizePhrase = (str: string) => {
@@ -22,9 +23,7 @@ const fetchData = async (url: string) => {
 }
 
 const formatId = (id: number) => {return String(id).padStart(4, '0');}
-
 const formatName = (name: string) => {return capitalizePhrase(name);}
-
 const formatHeight = (height: number) => {return `${height/10} m`;}
 const formatWeight = (weight: number) => {return `${weight/10} kg`;}
 
@@ -77,24 +76,51 @@ const formatStats = (stats: Array<any>) => {
 	let xData: Array<string> = ['HP', 'Atk', 'Def', 'SpA', 'Spd', 'Spe'];
 	let yData: Array<number> = [];
 	stats.forEach((elem: any) => {yData.push(elem.base_stat);});
-	const data = xData.map(function(e, i) {return [e, yData[i]]});
+	const total = stats.reduce((accum, elem) => {return accum + elem.base_stat}, 0);
 
 	return (
-		<BarChart
-			xAxis={[{
-				id: 'stats',
-				data: xData,
-				scaleType: 'band',
-			}]}
-			series={[{
-				data: yData,
-				type: 'bar'
-			}]}
-		/>
+		<div className='flex flex-col h-full gap-0'>
+			<p><u>Total:</u> {total}</p>
+			<BarChart
+				grid={{ horizontal: true }}
+				barLabel='value'
+				xAxis={[{
+					id: 'stats',
+					data: xData,
+					scaleType: 'band',
+					disableTicks: true,
+				}]}
+				series={[{
+					data: yData,
+					type: 'bar'
+				}]}
+				slotProps={{
+					loadingOverlay: { message: 'Loading data' },
+					noDataOverlay: { message: 'There is no data available' },
+				}}
+				sx={{
+					'& .MuiChartsAxis-root .MuiChartsAxis-tickLabel': {fill: 'white'},
+					'& .MuiChartsAxis-root .MuiChartsAxis-line': {stroke: 'white'},
+					'& .MuiChartsAxis-left .MuiChartsAxis-tick': {stroke: 'white'},
+					'.MuiChartsGrid-line': {stroke: 'gray'},
+				}}
+			/>
+		</div>
 	)
 }
 
-const PokemonInfo = (pokemon: any) => {
+const formatDescription = (entries: Array<any>) => {
+	let description;
+	for (const elem of entries) {
+		if (elem.language.name === 'es')
+			return elem.flavor_text;
+		else if (elem.language.name === 'en')
+			description = elem.flavor_text;
+	}
+	return description;
+}
+
+export default function PokemonInfo(pokemon: any) {
 	const info = pokemon.children;
 	const id = formatId(info.id);
 	const name = formatName(info.name);
@@ -102,15 +128,14 @@ const PokemonInfo = (pokemon: any) => {
 	const weight = formatWeight(info.weight);
 	const types = formatTypes(info.types);
 	const stats = formatStats(info.stats);
+	const cry = info.cries.latest;
 	const imageURL = info.sprites.front_default;
 	const shinyImageURL = info.sprites.front_shiny;
-	const cry = info.cries.latest;
 
 	const [isShiny, setIsShiny] = useState(false);
 	const currentImageURL = isShiny ? shinyImageURL : imageURL;
 
 	// Handle abilities info
-	const { data, isLoading } = useSWR(`/api/pokemon-species?id=${info.species.name}`, fetchData);
 	let abilitiesInfo: Array<any> = [];
 	info.abilities.forEach((ability: any) => {
 		const { data, isLoading } = useSWR(`/api/ability?name=${ability.ability.name}`, fetchData);
@@ -118,11 +143,11 @@ const PokemonInfo = (pokemon: any) => {
 		if (!data) return;
 		abilitiesInfo.push(formatAbilities(data, ability.is_hidden));
 	});
-	let abilityHeader;
-	if (abilitiesInfo.length > 1)
-		abilityHeader = <h2 className='text-xl'><strong>Habilidades</strong></h2>
-	else
-		abilityHeader = <h2 className='text-xl'><strong>Habilidad</strong></h2>
+	const abilityHeader = abilitiesInfo.length > 1
+							? <h2 className='text-xl'><strong>Habilidades</strong></h2>
+							: <h2 className='text-xl'><strong>Habilidad</strong></h2>;
+
+	const { data, isLoading } = useSWR(`/api/pokemon-species?id=${info.species.name}`, fetchData);
 
 	// Canvas behavior
 	const handleCanvasClick = () => {setIsShiny((prev) => !prev);};
@@ -147,22 +172,42 @@ const PokemonInfo = (pokemon: any) => {
 	if (!data) return;
 
 	const genus = formatGenera(data.genera);
+	const description = formatDescription(data.flavor_text_entries);
 
 	return (
 		<div className="flex flex-row gap-5 w-4/5 p-4">
-			<div className="flex flex-col w-1/3 p-4 bg-zinc-800 rounded-3xl ring-[1px] ring-green-700 gap-3">
-				<div>
-					<h1 className="text-xl"><strong>{name} #{id}</strong></h1>
-					<p className="text-sm">{genus}</p>
-				</div>
+			<div className="flex flex-col w-1/3 p-4 bg-zinc-800 rounded-3xl ring-[2px] ring-green-700 gap-3">
+				<Tooltip title={description} placement='right'
+					slotProps={{
+						tooltip: {
+							sx: {
+								color: '#e4e4e7',
+								backgroundColor: 'black',
+								border: '1px solid #15803d',
+								fontSize: '0.9em',
+							}
+						}
+					}}
+				>
+					<div className='w-fit'>
+						<h1 className="text-xl"><strong>{name} #{id}</strong></h1>
+						<p className="text-sm">{genus}</p>
+					</div>
+				</Tooltip>
 				<div className="flex flex-row gap-2">{types}</div>
-				<canvas onClick={handleCanvasClick} ref={canvasRef} className={`${styles.render}`}></canvas>
+				<div className='flex flex-col w-full items-center'>
+					<canvas
+						onClick={handleCanvasClick}
+						ref={canvasRef}
+						className={`${styles.render} ${isShiny ? styles.isShiny : ''}`}
+					></canvas>
+				</div>
 				<div>
 					<p><strong>Altura:</strong> {height}</p>
 					<p><strong>Peso:</strong> {weight}</p>
 				</div>
 			</div>
-			<div className="flex flex-col w-1/3 p-4 bg-zinc-800 rounded-3xl ring-[1px] ring-green-700 gap-3" style={{ justifyContent:'space-between' }}>
+			<div className="flex flex-col w-1/3 p-4 bg-zinc-800 rounded-3xl ring-[2px] ring-green-700 gap-3" style={{ justifyContent:'space-between' }}>
 				<div className='flex flex-col gap-3'>
 					{abilityHeader}
 					{abilitiesInfo}
@@ -178,12 +223,10 @@ const PokemonInfo = (pokemon: any) => {
 					</audio>
 				</div>
 			</div>
-			<div className="flex flex-col w-1/3 p-4 bg-zinc-800 rounded-3xl ring-[1px] ring-green-700 gap-3">
+			<div className="flex flex-col w-1/3 p-4 bg-zinc-800 rounded-3xl ring-[2px] ring-green-700 gap-3">
 				<h2 className='text-xl'><strong>Estadísticas</strong></h2>
 				{stats}
 			</div>
 		</div>
 	)
 }
-
-export default PokemonInfo;
