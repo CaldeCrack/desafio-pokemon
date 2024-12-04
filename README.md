@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Desafío Pokémon
 
-## Getting Started
+Aplicación web desarrollada en [Next.js](https://nextjs.org) para la visualización de información de Pokémon obtenida mediante la [PokéAPI](https://pokeapi.co).
 
-First, run the development server:
+Disponible públicamente mediante el despliegue realizado en [Vercel](https://desafio-pokemon-sand.vercel.app).
+
+## Contenidos
+
+- [Desafío Pokémon](#desafío-pokémon)
+  - [Instalación](#instalación)
+  - [Características](características)
+
+## Instalación
+
+Si se quiere ejecutar localmente se necesita tener instalado `npm`, luego, seguir los siguientes pasos:
+
+- Clonar el repositorio:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/CaldeCrack/desafio-pokemon.git
+cd desafio-pokemon
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Instalar las dependencias:
+```bash
+npm install --force
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Hacer build y ejecutar el proyecto:
+```
+npm run build
+npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Abrir la página:
 
-## Learn More
+Tras realizar `npm start` la página estará disponible al abrir [http://localhost:3000](http://localhost:3000) en un navegador.
 
-To learn more about Next.js, take a look at the following resources:
+## Características
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Botón de búsqueda aleatoria
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+En la página de inicio se cuenta con un botón en el lado derecho de la barra de búsqueda, al hacer click en este busca por un Pokémon aleatoriamente entre todos los disponibles.
 
-## Deploy on Vercel
+### Sprite dinámico
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Al hacer click sobre el sprite del Pokémon se alterna entre su sprite por defecto y la versión shiny.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Descripción del Pokémon
+
+Esta información se puede visualizar cuando el cursor se posa encima del nombre, id o apodo del Pokémon.
