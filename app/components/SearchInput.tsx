@@ -1,11 +1,15 @@
 'use client';
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function SearchInput() {
 	const search = useSearchParams();
 	const [pokemon, setPokemon] = useState(search ? search.get('name') : null);
 	const router = useRouter();
+
+	useEffect(() => {
+		if (!search.has('name')) setPokemon('');
+	}, [search]);
 
 	const onSearch = (event: React.FormEvent) => {
 		event.preventDefault();

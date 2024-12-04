@@ -178,13 +178,18 @@ export default function PokemonInfo(pokemon: any) {
 
 	const [isShiny, setIsShiny] = useState(false);
 	const [spriteLoaded, setSpriteLoaded] = useState(false);
+	const [isClient, setIsClient] = useState(false);
 	const currentImageURL = isShiny ? shinyImageURL : imageURL;
+
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
 
 	// Handle abilities info
 	const abilitiesInfo: any[] = [];
 	info.abilities.forEach((ability: any) => {
 		const { data, isLoading } = useSWR(`/api/ability?name=${ability.ability.name}`, fetchData);
-		if (isLoading) return <div>Cargando...</div>;
+		if (!isClient && isLoading) return <div>Cargando...</div>;
 		if (!data) return;
 		abilitiesInfo.push(formatAbilities(data, ability.is_hidden));
 	});
@@ -217,7 +222,7 @@ export default function PokemonInfo(pokemon: any) {
 		};
 	}, [data, isLoading, currentImageURL, abilitiesInfo]);
 
-	if (isLoading) return <div>Cargando...</div>;
+	if (!isClient && isLoading) return <div>Cargando...</div>;
 	if (!data) return;
 
 	const genus = formatGenera(data.genera);

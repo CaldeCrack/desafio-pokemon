@@ -6,8 +6,10 @@ import PokemonInfo from "../components/PokemonInfo";
 const fetchPokemon = async (url: string) => {
 	const response = await fetch(url);
 
-	if(!response.ok)
-		throw new Error('Fallo al buscar pokémon');
+	if(!response.ok) {
+		const error = await response.json();
+		throw new Error(error.error || 'An error occurred while fetching data');
+	}
 
 	return response.json();
 }
@@ -17,9 +19,13 @@ export default function PokemonPage() {
 	const pokemonName = pokemon ? pokemon.get('name') : null;
 	const encodedPokemonName = encodeURI(pokemonName || '');
 
-	const { data, isLoading } = useSWR(`/api/pokemon?name=${encodedPokemonName}`, fetchPokemon);
+	const { data, error, isLoading } = useSWR(`/api/pokemon?name=${encodedPokemonName}`,
+		fetchPokemon,
+		{errorRetryCount: 0, revalidateOnError: false}
+	);
 
 	if (isLoading) return <div>Cargando...</div>;
+	if (error) return <div>Pokémon no encontrado :(</div>;
 	if (!data) return null;
 
 	return (<PokemonInfo>{data}</PokemonInfo>)

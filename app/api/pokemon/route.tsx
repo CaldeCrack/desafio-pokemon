@@ -12,8 +12,15 @@ export async function GET(request: NextRequest) {
 	try {
 		const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${parsed_query}`);
 
+		if (response.status === 404) {
+			return new Response(JSON.stringify({ error: 'Pokémon no encontrado' }), {
+				status: 404,
+				headers: { 'Content-Type': 'application/json' },
+			});
+		}
+
 		if (!response.ok)
-			throw new Error('Failed to fetch Pokémon data');
+			throw new Error('Error al obtener información del Pokémon');
 
 		const pokemon = await response.json();
 
@@ -22,6 +29,6 @@ export async function GET(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error(error);
-		return new Response('Error fetching Pokémon data', {status: 500});
+		return new Response('Error obteniendo información del Pokémon', {status: 500});
 	}
 }
