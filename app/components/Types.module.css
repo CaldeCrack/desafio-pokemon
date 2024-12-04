@@ -1,11 +1,12 @@
 canvas.render {
 	box-sizing: border-box;
-	width: 192px;
-	height: 192px;
+	width: 194px;
+	height: 194px;
 	image-rendering: pixelated;
-	border: 2px black solid;
+	border: 1px black solid;
 	border-radius: 6px;
 	background-color: black;
+	user-select: none;
 }
 
 canvas.render:hover {
@@ -13,7 +14,7 @@ canvas.render:hover {
 }
 
 canvas.isShiny {
-	border: 2px solid gold;
+	border: 1px solid gold;
 }
 
 /* Credits to https://github.com/justingolden21 */
