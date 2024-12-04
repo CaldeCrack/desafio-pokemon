@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import SearchInput from "./components/SearchInput";
 import Link from 'next/link';
 import "./globals.css";
+import { Suspense } from "react";
 
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
@@ -38,8 +39,8 @@ export default function RootLayout({
 					<Link href='/' passHref>
 						<span className="text-2xl cursor-pointer">Búsqueda Pokémon</span>
 					</Link>
-					<SearchInput></SearchInput>
-					{children}
+					<Suspense fallback={<div>Cargando...</div>}><SearchInput></SearchInput></Suspense>
+					<Suspense fallback={<div>Cargando...</div>}>{children}</Suspense>
 				</div>
 
 				<a

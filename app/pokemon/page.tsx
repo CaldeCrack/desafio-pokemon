@@ -8,7 +8,7 @@ const fetchPokemon = async (url: string) => {
 
 	if(!response.ok) {
 		const error = await response.json();
-		throw new Error(error.error || 'An error occurred while fetching data');
+		throw new Error(error.error || 'Se encontró un error mientras se obtenía la información');
 	}
 
 	return response.json();

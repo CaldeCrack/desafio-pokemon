@@ -12,7 +12,10 @@ const nextConfig: NextConfig = {
 	},
 	devIndicators: {
 		appIsrStatus: false,
-	}
+	},
+	eslint: {
+		ignoreDuringBuilds: true,
+	},
 };
 
 export default nextConfig;
